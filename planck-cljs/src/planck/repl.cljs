@@ -433,7 +433,8 @@
     (when source
       (cb (merge
             {:lang   lang
-             :source source}
+             :source source
+             :file   path}
             (when-not (= :js lang)
               (cached-callback-data path cache-prefix source modified raw-load))))
       :loaded)))
