@@ -1,5 +1,7 @@
 (ns planck.core
-  (:require [planck.repl :as repl])
+  (:require [planck.repl :as repl]
+            [cljs.tools.reader :as r]
+            [cljs.tools.reader.reader-types :as rt])
   (:import [goog.string StringBuffer]))
 
 (def *planck-version* js/PLANCK_VERSION)
@@ -52,6 +54,22 @@
                                     (subs s 0 n)]))))
       (when (reset! buffer (-read this))
         (recur this))))
+  rt/Reader
+  (read-char [this]
+    (if (seq @buffer)
+      (fission! buffer (fn [s]
+                         [(subs s 1) (first s)]))
+      (when (reset! buffer (-read this))
+        (recur this))))
+  (peek-char [this]
+    (if (seq @buffer)
+      (first @buffer)
+      (when (reset! buffer (-read this))
+        (recur this))))
+  rt/IPushbackReader
+  (unread [this ch]
+    (swap! buffer (fn [s]
+                    (str ch s))))
   IClosable
   (-close [_]
     (raw-close)))
@@ -129,6 +147,25 @@
   "Reads the next line from the current value of planck.io/*in*"
   []
   (-read-line *in*))
+
+(defn read
+  "Reads the first object from a cljs.tools.reader.reader-types/IPushbackReader
+  Returns the object read. If EOF, throws if eof-error? is true.
+  Otherwise returns sentinel. If no reader is provided, *in* will be used.
+
+  Opts is a persistent map with valid keys:
+     :read-cond - :allow to process reader conditionals, or
+                  :preserve to keep all branches
+     :features - persistent set of feature keywords for reader conditionals
+     :eof - on eof, return value unless :eofthrow, then throw.
+            if not specified, will throw"
+  ([] (read *in*))
+  ([reader]
+    (r/read reader))
+  ([opts reader]
+    (r/read opts reader))
+  ([reader eof-error? eof-value]
+    (r/read reader eof-error? eof-value)))
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.
