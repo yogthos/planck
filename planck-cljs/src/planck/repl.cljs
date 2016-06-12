@@ -1186,10 +1186,11 @@
 (declare print-result)
 
 (defn- format-spec
-  [spec left-margin]
-  (let [raw-print (binding [theme (get-theme :plain)]
+  [spec left-margin ns]
+  (let [raw-print (binding [theme (get-theme :light)]
                     (with-out-str (print-result (s/describe spec)
-                                    {::spec?          true
+                                    {::keyword-ns     ns
+                                     ::spec?          true
                                      ::as-code?       true
                                      ::term-width-adj (- left-margin)})))]
     (string/replace (str-butlast raw-print) #"\n"
@@ -1241,7 +1242,7 @@
             (print "Spec")
             (run! (fn [[role spec]]
                     (when (and spec (not (= spec ::s/unknown)))
-                      (print (str "\n " (name role) ":") (format-spec spec (+ 3 (count (name role)))))))
+                      (print (str "\n " (name role) ":") (format-spec spec (+ 3 (count (name role))) n))))
               specs)
             (println)))))))
 
@@ -1415,15 +1416,17 @@
          planck.pprint.data/pprint)
         value {:width ((fnil + 0) term-width (::term-width-adj opts))
                :theme theme
-               :spec? (::spec? opts)})
+               :spec? (::spec? opts)
+               :keyword-ns (::keyword-ns opts)})
       (prn value))
     (prn value)))
 
 (s/def ::as-code? boolean?)
 (s/def ::spec? boolean?)
+(s/def ::keyword-ns symbol?)
 (s/def ::term-width-adj integer?)
 (s/fdef print-result
-  :args (s/cat :value ::s/any :opts (s/keys :opt [::as-code? ::term-width-adj ::spec])))
+  :args (s/cat :value ::s/any :opts (s/keys :opt [::as-code? ::term-width-adj ::spec ::keyword-ns])))
 
 (defn- wrap-warning-font
   [s]
