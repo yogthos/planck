@@ -1187,10 +1187,11 @@
 
 (defn- format-spec
   [spec left-margin]
-  (let [raw-print (with-out-str (print-result (s/describe spec)
-                                  {::spec?          true
-                                   ::as-code?       true
-                                   ::term-width-adj (- left-margin)}))]
+  (let [raw-print (binding [theme (get-theme :plain)]
+                    (with-out-str (print-result (s/describe spec)
+                                    {::spec?          true
+                                     ::as-code?       true
+                                     ::term-width-adj (- left-margin)})))]
     (string/replace (str-butlast raw-print) #"\n"
       (apply str \newline (repeat left-margin " ")))))
 
