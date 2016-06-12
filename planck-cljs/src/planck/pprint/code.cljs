@@ -173,9 +173,9 @@
 (defn default-symbols
   [spec?]
   (build-symbol-map
-    {pretty-arrow (concat '[. .. -> ->> and doto or some-> some->>] (when spec? '[* ? + &]))
+    {pretty-arrow (concat '[. .. -> ->> and doto some-> some->>] (when spec? '[* ? + &]) (when-not spec? '[or]))
      pretty-case  '[case cond-> cond->>]
-     pretty-cond  (concat '[cond] (when spec? '[cat keys alt]))
+     pretty-cond  (concat '[cond] (when spec? '[cat keys alt or]))
      pretty-condp '[condp]
      pretty-defn  '[defmacro defmulti defn defn-]
      pretty-fn    '[fn]
