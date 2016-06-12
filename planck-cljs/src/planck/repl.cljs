@@ -1179,6 +1179,21 @@
       (string/replace-all s #"\n      ?" "\n  ")
       s)))
 
+(defn- str-butlast
+  [s]
+  (subs s 0 (dec (count s))))
+
+(declare print-result)
+
+(defn- format-spec
+  [spec left-margin]
+  (let [raw-print (with-out-str (print-result (s/describe spec)
+                                  {::spec?          true
+                                   ::as-code?       true
+                                   ::term-width-adj (- left-margin)}))]
+    (string/replace (str-butlast raw-print) #"\n"
+      (apply str \newline (repeat left-margin " ")))))
+
 (defn- print-doc [{n :ns nm :name :as m}]
   (println "-------------------------")
   (println (str (when-let [ns (:ns m)] (str ns "/")) (:name m)))
@@ -1225,7 +1240,7 @@
             (print "Spec")
             (run! (fn [[role spec]]
                     (when (and spec (not (= spec ::s/unknown)))
-                      (print (str "\n " (name role) ":") (s/describe spec))))
+                      (print (str "\n " (name role) ":") (format-spec spec (+ 3 (count (name role)))))))
               specs)
             (println)))))))
 
@@ -1391,16 +1406,23 @@
     (cb {:value nil})))
 
 (defn- print-result
-  [value as-code?]
+  [value opts]
   (if *pprint-results*
     (if-let [[term-height term-width] (js/PLANCK_GET_TERM_SIZE)]
-      ((if as-code?
+      ((if (::as-code? opts)
          planck.pprint.code/pprint
          planck.pprint.data/pprint)
-        value {:width term-width
-               :theme theme})
+        value {:width ((fnil + 0) term-width (::term-width-adj opts))
+               :theme theme
+               :spec? (::spec? opts)})
       (prn value))
     (prn value)))
+
+(s/def ::as-code? boolean?)
+(s/def ::spec? boolean?)
+(s/def ::term-width-adj integer?)
+(s/fdef print-result
+  :args (s/cat :value ::s/any :opts (s/keys :opt [::as-code? ::term-width-adj ::spec])))
 
 (defn- wrap-warning-font
   [s]
@@ -1471,7 +1493,7 @@
              (when-not error
                (when (or print-nil-expression?
                          (not (nil? value)))
-                 (print-result value (macroexpand-form? expression-form)))
+                 (print-result value {::as-code? (macroexpand-form? expression-form)}))
                (process-1-2-3 expression-form value)
                (reset! current-ns ns)
                nil))
