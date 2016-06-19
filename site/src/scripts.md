@@ -56,7 +56,8 @@ Hello there!
 If you'd like your script to start execution by executing a main function, you can make use of Planck's `-m` command-line option, specifying the namespace containing a `-main` function. Let's say you have `foo/core.cljs` with:
 
 ```
-(ns foo.core)
+(ns foo.core
+  (:require [planck.shell :refer [sh]])
 
 (defn greet [name]
   (println (str "Hello " name "!")))
@@ -70,4 +71,22 @@ then this works:
 ```
 $ planck -m foo.core ClojureScript
 Hello ClojureScript!
+```
+
+### Shell Interaction
+
+The `planck.shell` namespace provides functions for interacting with the shell.
+Commands can be executed by running the `sh` function as seen in the following example:
+
+```
+#!/usr/bin/env planck
+(ns foo.core
+  (:require [planck.shell :refer [sh]]
+            [planck.core :refer [*command-line-args*]]))
+
+(defn list-files [dir]
+  (println "listing files in" dir)
+  (println (sh "ls" "-l" dir)))
+
+(list-files (first *command-line-args*))
 ```
